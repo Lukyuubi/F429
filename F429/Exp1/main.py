@@ -1,40 +1,39 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 
-# Carregar o arquivo CSV
-df = pd.read_csv('R1K_C100n_dados.csv')
+def calcular_transmitancia(csv_file):
+    # Ler o CSV
+    df = pd.read_csv(csv_file)
+    
+    # Assumindo que as colunas sejam 'Frequência', 'Tensão_Entrada' e 'Tensão_Saída'
+    frequencia = df['frequency (Hz)']
+    tensao_entrada = df['Vpp1 (V)']
+    tensao_saida = df['Vpp2 (V)']
+    
+    # Calcular a transmitância em dB
+    transmitancia_dB = 20 * np.log10(tensao_saida / tensao_entrada)
+    
+    return frequencia, transmitancia_dB
 
-# Supondo que o arquivo CSV tenha as colunas 'frequencia', 'V1pp', 'V2pp', 'fase'
-frequencia = df['frequency (Hz)']
-V1pp = df['Vpp1 (V)']
-V2pp = df['Vpp2 (V)']
-fase = df['phase (Ch2-Ch1) (degrees)']
-# Cálculo da razão V2/V1
-razao_V2_V1 = V2pp / V1pp
+# Lista de arquivos CSV
+arquivos_csv = ['C220n_R1k_dados.csv', 'C220n_R4.7K_dados.csv', 'C220n_R470_dados.csv', 'C220n_R2200_dados.csv']
 
-# Corrigir a fase para garantir que ela comece em 90 graus e decaia
-fase_corrigida = np.where(fase <-90, fase + 360, fase)  # Adiciona 360 graus para valores negativos
-
-# Opcionalmente, podemos fixar o valor máximo em 90 graus
-fase_corrigida = np.clip(fase_corrigida, None, 90)
-
-# Gráfico log-log da razão V2/V1 em função da frequência
 plt.figure(figsize=(10, 6))
-plt.loglog(frequencia, razao_V2_V1, label='V2/V1')
-plt.title('Razão V2/V1 em função da frequência')
+
+#Obtém dados das colunas de cada csv
+for csv_file in arquivos_csv:
+    frequencia, transmitancia_dB = calcular_transmitancia(csv_file)
+    plt.scatter(frequencia, transmitancia_dB, label=f'Transmitância ({csv_file})')
+
+# Configurações do gráfico
+plt.xscale('log')  # Escala logarítmica no eixo x (frequência)
 plt.xlabel('Frequência (Hz)')
-plt.ylabel('V2/V1')
+plt.ylabel('Transmitância (dB)')
+plt.title('Gráfico de Transmitância em dB para Capacitância 200 nF e variação de Resistores')
 plt.grid(True, which="both", ls="--")
 plt.legend()
-plt.savefig('grafico1.png')
+plt.savefig('grafico_capacitor_cte.png')
 
-# Gráfico semi-log da fase em função da frequência
-plt.figure(figsize=(10, 6))
-plt.semilogx(frequencia, fase_corrigida, label='Fase')
-plt.title('Fase em função da frequência')
-plt.xlabel('Frequência (Hz)')
-plt.ylabel('Fase (graus)')
-plt.grid(True, which="both", ls="--")
-plt.legend()
-plt.savefig('grafico2.png')
